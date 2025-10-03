@@ -49,23 +49,25 @@ void delay_init() {
     // Set reset value for SysTick to the max possible - allow the largest possible delay
     SysTick->RVR = SYSTICK_COUNT_DOWN_FROM;
 
+    // Default value for bit 2, so count is sourced from AHB/8
+    // Our system clock is 72MHz, so the systick frequency is 9MHz
+
+    // SysTick now counts from 0x00FFFFFF to 0, then repeats forever...
+
     // Reduce the priority of the systick interrupt to the minimum possible.
     // This avoids systick interrupting I2C or USB routines, which can cause I2C transfers to stall.
 
     // Enable SysTick and the elapsed interrupt.
     // Set PRIGROUP to 3
-    *AIRCR = (0b011 << 8) | 0x5FA << 16;
-    *SHPR_3 = 255 << 24;
+    SysCtrlBlock->AIRCR = (0b011 << 8) | 0x5FA << 16;
+    SysCtrlBlock->SHPR[2] = 255 << 24;
 
     // For some reason, even having systick enabled seems to prevent I2C from working properly.
     // This is despite correctly configuring the priority to be lower than I2C and USB.
-    // I have confirmed that neither the I2C nor USB interrupts are being interrupted by systick.
+    // I have confirmed that neither the I2C nor USB interrupts are being interrupted by systick
+    // using variables set in each interrupt.
+    // FUTURE TODO: Work out this problem or use another timer.
 	SysTick->CSR = SYSTICK_ENA;
-
-    // Default value for bit 2, so count is sourced from AHB/8
-    // Our system clock is 72MHz, so the systick frequency is 9MHz
-
-    // SysTick now counts from 0x00FFFFFF to 0, then repeats forever...
 }
 
 void delay_us(int us) {

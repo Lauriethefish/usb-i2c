@@ -20,6 +20,7 @@ typedef struct SysTick_t {
 
 typedef struct _SysCtrlBlock {
     int ACTLR; // Aux. control register
+    char _reserved[3316];
     int CPUID; // CPUID base register
     int ICSR; // Interrupt control and state register
     int VTOR; // Vector table offset register
@@ -30,17 +31,14 @@ typedef struct _SysCtrlBlock {
     int SHCRS; // System handler control and state register
     int CFSR; // Configurable fault status register
     int HFSR; // HardFault status register
+    int _reserved2;
     int MMAR; // MemManage fault address register
     int BFAR; // BusFault address register
     int AFSR; // Auxillary fault status register
 } SysCtrlBlock;
 
-#define SHPR_1 ((volatile int*) 0xE000ED18)
-#define SHPR_2 ((volatile int*) 0xE000ED1C)
-#define SHPR_3 ((volatile int*) 0xE000ED20)
 
-#define AIRCR ((volatile int*) 0xE000ED0C)
-
+// System handler priority registers
 
 #define SysCtrlBlock ((volatile SysCtrlBlock*) 0xE000E008)
 
