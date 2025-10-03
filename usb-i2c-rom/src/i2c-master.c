@@ -177,8 +177,8 @@ BOOL I2CMaster_StartNextSection() {
     return TRUE;
 }
 
+// Called upon start of a bulk out transfer - begins an I2C transaction.
 void USBHandlers_StartBulkOutTransfer() {
-
     i2c_trans_header trans_header;
     if(USBHandlers_ReadFromBulkOutBuffer((char*) &trans_header, sizeof(i2c_trans_header)) != 0) {
         allow_blocking_immediately();
@@ -201,6 +201,7 @@ void USBHandlers_StartBulkOutTransfer() {
     I2CMaster_StartNextSection();
 }
 
+// Resets the I2C peripheral and configures it for the given mode and frequency in kHz.
 void USBHandlers_ConfigureI2CMode(BOOL fastMode, int frequency) {
     // Power cycle the I2C peripheral - aborting any current transactions.
     RCC->APB1ENR &= ~RCC_APB1ENR_I2C2EN;
@@ -222,7 +223,6 @@ void USBHandlers_ConfigureI2CMode(BOOL fastMode, int frequency) {
 
 // Writes the next data value to the DR during transmission.
 BOOL I2CMaster_WriteNextData() {
-    int timeref = get_time_ref();
     // NOTE: This is really the only time critical code path in the binary.
     // If the bulk in buffer is empty, it has to copy from the USB SRAM to the buffer
     // (64 bytes). This can take some time and we only have 180 clock cycles to write the next byte.
@@ -230,8 +230,6 @@ BOOL I2CMaster_WriteNextData() {
         char dataByte;
         int status = USBHandlers_ReadFromBulkOutBuffer(&dataByte, 1);
         I2C2->DR = dataByte;
-        int after = get_time_ref();
-        //dbgprintf("Took: %d\n", (timeref - after) << 3);
 
         // TODO: Potential issue here where if `USBHandlers_ReadFromBulkOutBuffer` needs to copy one buffer to another
         // it could take too long for the next I2C bit.
@@ -243,7 +241,7 @@ BOOL I2CMaster_WriteNextData() {
             I2CMaster_AbortTransfer();
             return FALSE;
         }
-        //dbgprintf("WriteNextData\n");
+
         sectionBytesLeft--;
     }
 }
@@ -415,7 +413,6 @@ void I2C2_ER() {
     }   else if(sr1 & I2C_SR1_ARLO_MASK) {
         I2C2->SR1 &= ~I2C_SR1_ARLO_MASK;
         dbgprintf("Got ARLO\n");
-        // TODO: In this case, we must re-enable the I2C as the master in the next transfer, otherwise the USBI2C will stall.
         transResult = I2CResultArbitrationLost;
         I2CMaster_AbortTransfer();
     }   else if(sr1 & I2C_SR1_BERR_MASK) {

@@ -16,7 +16,7 @@ int numEndpoints = 0;
 usb_device_descriptor* pDeviceDescriptor;
 usb_configuration_descriptor* pConfigurationDescriptor;
 
-// Table to convert USB transfer types in descriptors into the values used in the endpoint register.
+// Table to convert USB transfer types in descriptors into the values used in the endpoint register in the stm32.
 usb_epr_transfer_type endpointDescriptorTransferTypeToEndpointRegister[4] = {
     UsbEprTransferTypeControl, // Transfer type 00 = Control
     UsbEprTransferTypeIsochronous, // Transfer type 01 = Isochronous
@@ -126,7 +126,6 @@ BOOL USB_BuildConfiguration() {
     numEndpoints = 1;
     endpointsByNumber[0] = &endpoints[0];
 
-
     char* cfgCursor = (char*) pConfigurationDescriptor;
     int totalLength = pConfigurationDescriptor->wTotalLengthLow + (pConfigurationDescriptor->wTotalLengthHigh << 8);
     char* endOfCfg = cfgCursor + totalLength;
@@ -161,7 +160,7 @@ void USB_pull_dplus_low() {
     // Set to general purpose output push pull
     // Set output value to 0.
 
-    int portNum = 12 - 8; // Bit 12 is in the "configuration register high."
+    int portNum = 12 - 8; // Pin 12 is in the "configuration register high."
     GPIO_A->CRH &= CLEAR_PORT_CFG_MASK(portNum);
     GPIO_A->CRH |= SET_PORT_CNF_MASK(portNum, GP_OUTPUT_PUSH_PULL);
     GPIO_A->CRH |= SET_PORT_MODE_MASK(portNum, OUTPUT_MODE_MAX_10_MHZ);
@@ -241,12 +240,12 @@ void USB_CreateBufferDescTable() {
     }
 }
 
-// Configures the register for the given endpoint, changing the current status of the transmitting/receiving end to the new value,
-// and updating it within the structure.
+// Configures the register for the given endpoint, changing the current status of the transmitting/receiving end to the given value.
 void USB_ConfigureEndpoint(int endpointId, 
     USB_STAT newRxStat,
     USB_STAT newTxStat, BOOL setEPKind) {
     usbd_endpoint* pEndpoint = &endpoints[endpointId];
+
     int prevRegValue = USB->EPR[endpointId];
     USB_STAT prevRxStat = (prevRegValue >> 12) & 3;
     USB_STAT prevTxStat = (prevRegValue >> 4) & 3;
@@ -270,8 +269,6 @@ void USB_ConfigureBulkEndpoint(usbd_endpoint* pEndpoint) {
 }
 
 BOOL USB_WriteTransmitBuffer(int endpointNumber, char* buffer, int length) {
-    // TODO: check state is correct
-
     // The USB SRAM is accessed with 32 bit words, but each word actually only references 16 bits of memory.
     // To improve abstraction we write the data in the required format automatically
 
@@ -303,9 +300,7 @@ BOOL USB_WriteTransmitBuffer(int endpointNumber, char* buffer, int length) {
         // So we send the second byte of the buffer as the most significant byte to counteract.
         int byteNum = word << 1;
         usbBuffer[word] = ((int) buffer[byteNum] | ((int) buffer[byteNum + 1] << 8));
-        //dbgprintf("%4x ", usbBuffer[word]);
     }
-    //dbgprintf("\n");
 
     // If we have an extra byte leftover, write the final byte into the LSByte of another word. 
     if(length > (numWords << 1)) {
@@ -332,9 +327,6 @@ int USB_GetReceiveBufferLength(int endpointNumber) {
 
 BOOL USB_ReadReceiveBuffer(int endpointNumber, char* buffer, int maxLength, int* outRxLength, int offset) {
     // Similarly, reading data requires removing the two "padding" bytes between each word of data.
-
-    int time_ref = get_time_ref();
-
     if(endpointNumber >= ENDPOINT_NUMBER_MAX || endpointNumber < 0) {
         return FALSE;
     }
@@ -383,7 +375,6 @@ BOOL USB_ReadReceiveBuffer(int endpointNumber, char* buffer, int maxLength, int*
         *buffer = *usbBuffer;
     }
 
-    //dbgprintf("RRB took: %d\n", (time_ref - get_time_ref()) << 3);
     *outRxLength = bytesAfterOffset;
     return TRUE;
 }
@@ -401,7 +392,6 @@ void USB_ResetBulkEndpoint(int endpointNumber) {
     pEndpoint->hasDataInTransmitBuffer = FALSE;
     USB_ConfigureBulkEndpoint(pEndpoint);
 }
-
 
 // Sets up the registers and enables the given endpoint, at index `endpointId` in `endpoints`
 void USB_InitialiseEndpoint(int endpointId) {
@@ -475,9 +465,8 @@ void USB_CorrectTransfer() {
         break;
     default:
         dbgprintf("Unsupported endpoint type\n");
-        BKPT();
+        abort();
     }
-    
 }
 
 // Called if a transfer fails

@@ -9,8 +9,6 @@ char bulkOutPublicBuf[MAX_PACKET_SIZE];
 int publicBufNextByte; // Next byte to extract from buffer
 int bulkOutPublicBufSize; // Total bytes in buffer
 
-//int firstHalfBytesRead;
-
 char bulkInPublicBuf[MAX_PACKET_SIZE];
 int bulkInPublicBufSize; // Current bytes in buffer, automatically flushed when full.
 
@@ -18,10 +16,6 @@ volatile BOOL bulkInPrivateBufFull = FALSE;
 volatile BOOL endOfTransfer = TRUE; // No transfer ongoing
 
 BOOL bulkOutGotShortPacket = TRUE; // End of previous transfer has been received.
-
-// We read the bulk out buffer in two halves to avoid copying too much data when trying to write
-// one byte to I2C - we only have a limited number of clock cycles on each "transmit buffer empty" interrupt.
-//volatile BOOL bulkOutReadFirstHalf = FALSE;
 
 // Attempts to fill the bulk in public buffer with `length` bytes from `buffer`.
 // Returns number of bytes successfully filled.
@@ -90,41 +84,8 @@ void USBHandlers_CompleteTransfer() {
     USB_BulkOutReadyForMoreData(1);
 }
 
-// Copies the bulk out private buffer (in the USB peripheral.) to the public buffer.
-// If `firstHalf` is TRUE, the first half of the buffer is copied, and the same applies for `secondHalf`.
-// Both can be TRUE to copy the whole buffer.
-void USBHandlers_CopyBulkOutBuffers(/*BOOL firstHalf, BOOL secondHalf*/) {
-    // Read the first half of the buffer
-    /*
-    if(firstHalf) {
-        if(!USB_ReadReceiveBuffer(1, &bulkOutPublicBuf[0], 32, &firstHalfBytesRead, 0)) {
-            // This error should never happen - endpoint `1` should exist.
-            dbgprintf("USB_ReadReceiveBuffer failed\n");
-            abort();
-        }
-        //dbgprintf("Copied first half: %d at %d\n", firstHalfBytesRead, publicBufNextByte);
-    }
-    if(secondHalf) {
-        int numRead;
-        if(!USB_ReadReceiveBuffer(1, &bulkOutPublicBuf[32], 32, &numRead, 32)) {
-            // This error should never happen - endpoint `1` should exist.
-            dbgprintf("USB_ReadReceiveBuffer failed\n");
-            abort();
-        }
-        bulkOutPublicBufSize = firstHalfBytesRead + numRead;
-
-        //dbgprintf("Copied 2nd half, total: %d at %d\n", bulkOutPublicBufSize, publicBufNextByte);
-
-        // Reset buffer position to zero if we've finished reading the buffer by reading the second half.
-        publicBufNextByte = 0;
-
-        // Only `ACK` additional data if we're continuing the same transfer.
-        // Otherwise, we should wait for the I2C master to complete the transfer before allowing the next one.
-        if(bulkOutPublicBufSize == MAX_PACKET_SIZE) {
-            USB_BulkOutReadyForMoreData(1);
-        }
-    }*/
-
+// Copies the bulk out private buffer (in the USB peripheral) to the public buffer.
+void USBHandlers_CopyBulkOutBuffers() {
     int numRead;
     if(!USB_ReadReceiveBuffer(1, &bulkOutPublicBuf[0], 64, &numRead, 0)) {
         // This error should never happen - endpoint `1` should exist.
@@ -172,14 +133,6 @@ int USBHandlers_ReadFromBulkOutBuffer(char* readInto, int length) {
     readInto += bytesRead;
     length -= bytesRead;
 
-    // If the first half of the public buffer is empty, we can copy the first half from the private buffer immediately
-    // Note that in the case of a short packet, it doesn't matter that the condition might never be met, because
-    // there is no subsequent packet.
-    //if(!bulkOutReadFirstHalf && publicBufNextByte >= 32) {
-    //    bulkOutReadFirstHalf = TRUE;
-    //    USBHandlers_CopyBulkOutBuffers(TRUE, FALSE);
-    //}
-
     if(!length) {
         return 0;
     }
@@ -194,8 +147,6 @@ int USBHandlers_ReadFromBulkOutBuffer(char* readInto, int length) {
         USBHandlers_CopyBulkOutBuffers(/*FALSE, TRUE*/);
     }
 
-    int time_ref = get_time_ref();
-
     // ...and try again
     bytesRead = USBHandlers_FillFromBulkOut(readInto, length);
     length -= bytesRead;
@@ -203,8 +154,6 @@ int USBHandlers_ReadFromBulkOutBuffer(char* readInto, int length) {
     if(length) {
         return -1;
     }
-
-    //dbgprintf("Time taken: %d\n", (time_ref - get_time_ref()) << 3);
 
     return 0;
 }
@@ -234,7 +183,6 @@ CONTROL_TRANSFER_TYPE USB_HandleSetupTransaction(int endpointNumber, setup_packe
         bulkOutGotShortPacket = TRUE;
         endOfTransfer = TRUE;
         bulkInPrivateBufFull = FALSE;
-        //bulkOutReadFirstHalf = FALSE;
 
         USBHandlers_ConfigureI2CMode(isFastMode, frequency);
 

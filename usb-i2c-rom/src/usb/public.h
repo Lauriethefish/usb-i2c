@@ -1,16 +1,15 @@
 #pragma once
 
 // Public definitions for USBD, the simple USB driver.
+// The driver supports bulk and control endpoints, and automatically handles control transactions during enumeration.
+// There is support for bulk transfers, as well as additional control transfers if desired.
+// The USB driver is minimalistic and only supports one configuration. Alternate settings for interfaces are not supported.
 
 #include "./spec_types.h"
 #include "../stm32.h"
 
 // Remember to change in `CreateBufferDescTable` as well.
 #define MAX_PACKET_SIZE 64
-
-// This header provides the interface through which the rest of the project communicates with the USB driver.
-// The USB driver is minimalistic and only supports one configuration. Alternate settings for interfaces are not supported.
-
 
 // NB: Methods for setting up endpoints are omitted as these are determined automatically from the configuration descriptor.
 

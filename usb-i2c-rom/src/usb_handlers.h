@@ -21,8 +21,8 @@ void USBHandlers_CompleteTransfer();
 
 // Reads data from the bulk out buffer into `readInto`.
 // Returns `0` if successful.
-// Returns `1` if insufficient data was available (i.e. the host was too slow)
-// Returns `2` if at the end of the current bulk out transfer (i.e. the I2C transaction is complete). 
+// Returns `-1` if insufficient data was available (i.e. the host was too slow)
+// Returns `1` if at the end of the current bulk out transfer (i.e. the I2C transaction is complete). 
 int USBHandlers_ReadFromBulkOutBuffer(char* readInto, int length);
 
 /// CALLBACKS

@@ -1,5 +1,7 @@
 #include "usb/public.h"
 
+// This header contains the device, configuration, interface and endpoint descriptors for the USBI2C converter.
+
 usb_device_descriptor device_descriptor = {
     .bLength = sizeof(usb_device_descriptor),
     .bDescriptorType = USB_DEVICE_DESCRIPTOR_TYPE,

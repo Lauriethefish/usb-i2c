@@ -46,7 +46,6 @@ void clock_setup() {
 }
 
 
-
 int main() {
     clock_setup();
     delay_init();

@@ -41,6 +41,7 @@ int sys_open(char* filename, int mode, int namelength) {
     return semihost_request(0x01, &params[0]);
 }
 
+// Writes the given data to a file handle.
 void sys_write(int file, char* data, int length) {
     int params[3];
     params[0] = file;
@@ -51,6 +52,7 @@ void sys_write(int file, char* data, int length) {
     semihost_request(0x05, &params[0]);
 }
 
+// Prints the given null-terminated string to stdout.
 int stdout_handle = -1;
 void print(char* data) {
     if(stdout_handle == -1) {
@@ -133,7 +135,6 @@ void enable_interrupts() {
 }
 
 void abort() {
-
     printfFlushBuffer();
     print("System abort triggered\n");
     while(1) { asm volatile(""); }

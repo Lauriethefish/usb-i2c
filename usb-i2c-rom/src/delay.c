@@ -1,7 +1,6 @@
 #include "delay.h"
 #include "cortex.h"
 #include "debug.h"
-//#include "main.h"
 
 // Currently using the maximum possible value for the initial systick counter, to allow the largest 
 // possible delay with our (rather naive) implementation.
@@ -66,6 +65,8 @@ void delay_init() {
     // This is despite correctly configuring the priority to be lower than I2C and USB.
     // I have confirmed that neither the I2C nor USB interrupts are being interrupted by systick
     // using variables set in each interrupt.
+    // Currently the only use for systick we have is for periodically printing debug messages when the device isn't busy.
+
     // FUTURE TODO: Work out this problem or use another timer.
 	SysTick->CSR = SYSTICK_ENA;
 }
