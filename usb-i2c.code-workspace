@@ -13,7 +13,8 @@
 	"settings": {
 		"files.associations": {
 			"mutex.h": "c",
-			"ioctl.h": "c"
+			"ioctl.h": "c",
+			"usb-i2c-ioctl.h": "c"
 		}
 	}
 }
