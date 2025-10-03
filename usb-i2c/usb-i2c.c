@@ -128,7 +128,9 @@ static int usbi2c_configurei2c(struct usbi2c_adapter* adap, bool force) {
     bool alreadyConfigured = adap->configuredMode;
     bool fastMode = adap->fastMode;
     int frequency = adap->frequency;
+    adap->configuredMode = TRUE;
     mutex_unlock(&adap->mode_mutex);
+
     if(alreadyConfigured && !force) {
         return 0;
     }
