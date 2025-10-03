@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "usb-i2c"
+		},
+		{
+			"path": "usb-i2c-rom"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"mutex.h": "c",
+			"ioctl.h": "c"
+		}
+	}
+}

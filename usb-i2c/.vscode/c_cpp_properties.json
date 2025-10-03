@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/src/linux-headers-6.14.0-32-generic/include/**",
+                "/usr/src/linux-hwe-6.14-headers-6.14.0-32/arch/x86/include/**",
+                "/usr/src/linux-headers-6.14.0-32-generic/arch/x86/include/generated/**"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "compilerArgs": ["-nostdinc"],
+            "defines": ["__KERNEL__", "KBUILD_MODNAME=\"usb_i2c\""],
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
