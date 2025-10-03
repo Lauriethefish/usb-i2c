@@ -101,3 +101,24 @@ int main() {
 In this demo, I use the [Luma.OLED](https://luma-oled.readthedocs.io/en/latest/) library to draw some graphics on an SH1106 display,
 connected via the blue pill to my PC.
 
+[Youtube Link](https://www.youtube.com/watch?v=1emYreDPznk)
+
+## Future improvements
+
+- The STM32 has two I2C peripherals, but this project only uses the second one. Potentially support for both could be added.
+- The STM32 also works as an I2C slave. We could add I2C slave support to the driver and ROM.
+- Right now we implement raw I2C, not SMBUS. Most SMBUS features can be emulated with raw I2C, but not all of them. In the future,
+we could add explicit SMBUS support.
+
+Also, one thing to bear in mind - I designed the ROM with no external dependencies so that I could learn how the STM32 registers work/
+get a more low level understanding. In the future, it makes sense to reimplement the ROM with the HAL so that it is more readable.
+
+## (Unavoidable?) limitations
+
+### Latency
+- The latency when sending I2C transactions is quite high, due to the need to send a USB packet to the STM32, and read a packet back before the transaction can complete.
+- This limits the maximum bandwidth, especially when each I2C transaction is small.
+- The problem is quite difficult to avoid because we need to read the result of the previous I2C transaction to return to the caller before the next transaction can be started.
+
+A potential solution is to just "assume" the transaction completes successfully, and read the result later/fail a later transaction if there's a problem. However,
+this would be confusing to userspace applications.
